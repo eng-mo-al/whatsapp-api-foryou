@@ -83,7 +83,8 @@ app.post('/api/sendText', async (req, res) => {
     }
 });
 
-const PORT = process.env.PORT || 10000;
+// اجعل السيرفر يأخذ المنفذ من المنصة حصراً (مع 61408 أو المنفذ الافتراضي)
+const PORT = process.env.PORT || 61408;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running on port ${PORT}`);
     connectToWhatsApp();
