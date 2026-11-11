@@ -44,14 +44,13 @@ async function connectToWhatsApp() {
 }
 
 app.get('/', (req, res) => {
-    // نستخدم خدمة مجانية لعمل QR Code مباشرة من النص الخام
     const qrImageUrl = rawQrCode ? `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(rawQrCode)}` : '';
 
     res.send(`
         <html>
             <body style="font-family: Arial; text-align: center; margin-top: 50px; background: #f9f9f9;">
                 <div style="background: white; padding: 30px; border-radius: 10px; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-                    <h2>WhatsApp API Gateway</h2>
+                    <h2>WhatsApp API Gateway - معهد فور يو</h2>
                     <p>Status: <b style="color: ${connectionStatus === 'CONNECTED' ? 'green' : 'orange'}">${connectionStatus}</b></p>
                     ${connectionStatus === 'SCAN_QR' && qrImageUrl ? `
                         <h3>Scan this QR Code with WhatsApp:</h3>
@@ -85,7 +84,8 @@ app.post('/api/sendText', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => {
+// تم ضبط الاستماع على '0.0.0.0' لضمان استقبال الاتصالات الخارجية من Botkeep
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running on port ${PORT}`);
     connectToWhatsApp();
 });
