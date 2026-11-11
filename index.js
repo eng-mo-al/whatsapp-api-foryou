@@ -83,7 +83,7 @@ app.post('/api/sendText', async (req, res) => {
     }
 });
 
-const PORT = process.env.PORT || 61408;
+const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running on port ${PORT}`);
     connectToWhatsApp();
