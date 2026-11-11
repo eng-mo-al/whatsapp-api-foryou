@@ -5,6 +5,9 @@ const pino = require('pino');
 const app = express();
 app.use(express.json());
 
+// 🔐 مفتاح الأمان السري (سنقوم بتغييره لاحقاً من إعدادات المنصة)
+const API_TOKEN = process.env.API_TOKEN || 'my_super_secret_token_123';
+
 let sock;
 let rawQrCode = '';
 let connectionStatus = 'DISCONNECTED';
@@ -23,7 +26,7 @@ async function connectToWhatsApp() {
         if (qr) {
             connectionStatus = 'SCAN_QR';
             rawQrCode = qr;
-            console.log('QR Code received.');
+            console.log('QR Code received. Open the web dashboard to scan.');
         }
 
         if (connection === 'close') {
@@ -43,7 +46,20 @@ async function connectToWhatsApp() {
     sock.ev.on('creds.update', saveCreds);
 }
 
+// 🛡️ صفحة الويب: لا تفتح إلا إذا كان معك المفتاح
 app.get('/', (req, res) => {
+    // نتحقق من المفتاح في الرابط (?token=YOUR_SECRET)
+    const providedToken = req.query.token;
+
+    if (providedToken !== API_TOKEN) {
+        return res.status(401).send(`
+            <body style="text-align: center; margin-top: 100px; font-family: Arial;">
+                <h1 style="color: red;">⛔ غير مصرح لك بالدخول</h1>
+                <p>يجب إضافة المفتاح السري في الرابط هكذا: <br> <b>your-server-url.com/?token=YOUR_SECRET</b></p>
+            </body>
+        `);
+    }
+
     const qrImageUrl = rawQrCode ? `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(rawQrCode)}` : '';
 
     res.send(`
@@ -67,8 +83,16 @@ app.get('/', (req, res) => {
     `);
 });
 
+// 🛡️ الـ API: لا ترسل رسائل إلا إذا كان معك المفتاح
 app.post('/api/sendText', async (req, res) => {
     try {
+        // نتحقق من المفتاح في الهيدر (Header) أو الرابط
+        const providedToken = req.headers['x-api-key'] || req.query.token;
+
+        if (providedToken !== API_TOKEN) {
+            return res.status(401).json({ success: false, error: 'Unauthorized: Invalid API Token' });
+        }
+
         const { chatId, text, number } = req.body;
         const target = chatId || `${number}@s.whatsapp.net`;
 
@@ -83,7 +107,6 @@ app.post('/api/sendText', async (req, res) => {
     }
 });
 
-// اجعل السيرفر يأخذ المنفذ من المنصة حصراً (مع 61408 أو المنفذ الافتراضي)
 const PORT = process.env.PORT || 61408;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running on port ${PORT}`);
